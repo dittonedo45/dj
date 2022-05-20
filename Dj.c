@@ -44,7 +44,6 @@ static VALUE
 dj_load_tracks (VALUE arg, VALUE oparg, int argsc, const VALUE *args)
 {
 
-	pthread_mutex_lock (&rbutex);
 	do {
 		if (rb_funcall (arg, rb_intern ("=="), 1, rb_str_new_cstr (".."))==Qtrue |
 		rb_funcall (arg, rb_intern ("=="), 1, rb_str_new_cstr ("."))==Qtrue)
@@ -53,7 +52,6 @@ dj_load_tracks (VALUE arg, VALUE oparg, int argsc, const VALUE *args)
 
 		rb_funcall (to_t, rb_intern ("push"), 1,  arg);
 	} while (0);
-	pthread_mutex_unlock (&rbutex);
 
 		return(Qnil);
 }
@@ -63,13 +61,17 @@ ReadDir (char *DirName)
 {
 		VALUE temp_var;
 
+	pthread_mutex_lock (&rbutex);
+		do {
 		temp_var = rb_funcall (rb_cFile, rb_intern ("directory?"), 1,
 				rb_str_new_cstr (DirName));
 
-		if (temp_var!=Qtrue) return;
+		if (temp_var!=Qtrue) break;
 
 		temp_var=
 		rb_funcall (rb_cDir,
+
+
 		rb_intern ("[]"),
 		1, rb_funcall (rb_cFile,
 		rb_intern ("join"), 2,
@@ -77,10 +79,15 @@ ReadDir (char *DirName)
 		rb_str_new_cstr ("*.mp3")));
 
 		if (rb_funcall (temp_var, rb_intern ("empty?"), 0)==Qtrue)
-		return;
+			break;
 
 		rb_block_call (temp_var, rb_intern ("each"),
 				0, 0, dj_load_tracks, rb_str_new_cstr (DirName));
+		} while (0);
+	pthread_mutex_unlock (&rbutex);
+
+		
+		return;
 }
 
 static void dj_show_error ()
