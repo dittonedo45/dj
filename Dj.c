@@ -43,6 +43,8 @@ int a, b;
 static VALUE
 dj_load_tracks (VALUE arg, VALUE oparg, int argsc, const VALUE *args)
 {
+
+	pthread_mutex_lock (&rbutex);
 	do {
 		if (rb_funcall (arg, rb_intern ("=="), 1, rb_str_new_cstr (".."))==Qtrue |
 		rb_funcall (arg, rb_intern ("=="), 1, rb_str_new_cstr ("."))==Qtrue)
@@ -51,6 +53,7 @@ dj_load_tracks (VALUE arg, VALUE oparg, int argsc, const VALUE *args)
 
 		rb_funcall (to_t, rb_intern ("push"), 1,  arg);
 	} while (0);
+	pthread_mutex_unlock (&rbutex);
 
 		return(Qnil);
 }
@@ -294,6 +297,8 @@ void dj_finalize ()
 int main (int argsc, char **args)
 {
 	pthread_mutex_init (&mmutex, NULL);
+	pthread_mutex_init (&rbutex, NULL);
+
 		dj_init ();
 		dj_run_safe (dj_cl_main, argsc, args);
 		dj_finalize ();
