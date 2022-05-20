@@ -157,6 +157,9 @@ void dj_finalize ();
 
 void dj_init ()
 {
+	pthread_mutex_init (&mmutex, NULL);
+	pthread_mutex_init (&rbutex, NULL);
+
 		assert (dj_init_output ("mp3"));
 		atexit (dj_finalize);
 		ruby_init ();
@@ -296,9 +299,6 @@ void dj_finalize ()
 
 int main (int argsc, char **args)
 {
-	pthread_mutex_init (&mmutex, NULL);
-	pthread_mutex_init (&rbutex, NULL);
-
 		dj_init ();
 		dj_run_safe (dj_cl_main, argsc, args);
 		dj_finalize ();
