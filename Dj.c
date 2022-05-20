@@ -294,6 +294,8 @@ static int dj_cl_main (int argsc, char **args)
 
 void dj_finalize ()
 {
+	pthread_mutex_destroy (&rbutex);
+	pthread_mutex_destroy (&mmutex);
 	ruby_finalize ();
 }
 
