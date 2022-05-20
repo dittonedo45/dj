@@ -46,11 +46,12 @@ dj_load_tracks (VALUE arg, VALUE oparg, int argsc, const VALUE *args)
 	do {
 		if (rb_funcall (arg, rb_intern ("=="), 1, rb_str_new_cstr (".."))==Qtrue |
 		rb_funcall (arg, rb_intern ("=="), 1, rb_str_new_cstr ("."))==Qtrue)
-				return(Qnil);
+			break;
 		//arg=rb_funcall (rb_cFile, rb_intern ("join"), 2, oparg, arg);
 
 		rb_funcall (to_t, rb_intern ("push"), 1,  arg);
 	} while (0);
+
 		return(Qnil);
 }
 
