@@ -24,75 +24,12 @@ VALUE to_t;
 AVFormatContext *o_ctx;
 AVCodecContext *encoder;
 SwrContext *swr;
-pthread_mutex_t mmutex;
-pthread_mutex_t rbutex;
-
-static time_t Time ( time_t * Tt )
-{
-        return time ( Tt );
-}
-
-static int Random ( a, b )
-int a, b;
-{
-#define min(a,b) (a>b?b:a)
-        return ( rand (  ) % abs ( b - a ) ) + min ( a, b );
-}
-
-
-static VALUE
-dj_load_tracks (VALUE arg, VALUE oparg, int argsc, const VALUE *args)
-{
-
-	do {
-		if (rb_funcall (arg, rb_intern ("=="), 1, rb_str_new_cstr (".."))==Qtrue |
-		rb_funcall (arg, rb_intern ("=="), 1, rb_str_new_cstr ("."))==Qtrue)
-			break;
-		//arg=rb_funcall (rb_cFile, rb_intern ("join"), 2, oparg, arg);
-
-		rb_funcall (to_t, rb_intern ("push"), 1,  arg);
-	} while (0);
-
-		return(Qnil);
-}
-
-static void
-ReadDir (char *DirName)
-{
-		VALUE temp_var;
-
-	pthread_mutex_lock (&rbutex);
-		do {
-		temp_var = rb_funcall (rb_cFile, rb_intern ("directory?"), 1,
-				rb_str_new_cstr (DirName));
-
-		if (temp_var!=Qtrue) break;
-
-		temp_var=
-		rb_funcall (rb_cDir,
-
-
-		rb_intern ("[]"),
-		1, rb_funcall (rb_cFile,
-		rb_intern ("join"), 2,
-		rb_str_new_cstr (DirName),
-		rb_str_new_cstr ("*.mp3")));
-
-		if (rb_funcall (temp_var, rb_intern ("empty?"), 0)==Qtrue)
-			break;
-
-		rb_block_call (temp_var, rb_intern ("each"),
-				0, 0, dj_load_tracks, rb_str_new_cstr (DirName));
-		} while (0);
-	pthread_mutex_unlock (&rbutex);
-
-		
-		return;
-}
 
 static void dj_show_error ()
 {
-	;;
+	;
+	
+	;
 	rb_set_errinfo (Qnil);
 }
 
@@ -164,8 +101,6 @@ void dj_finalize ();
 
 void dj_init ()
 {
-	pthread_mutex_init (&mmutex, NULL);
-	pthread_mutex_init (&rbutex, NULL);
 
 		assert (dj_init_output ("mp3"));
 		atexit (dj_finalize);
@@ -250,10 +185,9 @@ dj_each (VALUE arg, VALUE oparg, int argsc, const VALUE *args)
 		ret=avcodec_open2 (decoder, dec, 0);
 		if (ret<0) break;
 
-		pthread_mutex_lock (&mmutex);
 		init_convertor (encoder, decoder);
-		pthread_mutex_unlock (&mmutex);
 
+		uint64_t total_duration = 0llu;
 		while (1)
 		{
 			AVPacket pkt;
@@ -262,6 +196,7 @@ dj_each (VALUE arg, VALUE oparg, int argsc, const VALUE *args)
 			if (ret<0) break;
 			do {
 				if (pkt.stream_index!=si) break;
+				total_duration += pkt.duration;
 				ret = avcodec_send_packet (decoder, &pkt);
 				if (ret<0) break;
 					AVFrame *frame = av_frame_alloc ();
@@ -269,9 +204,7 @@ dj_each (VALUE arg, VALUE oparg, int argsc, const VALUE *args)
 				{
 					ret=avcodec_receive_frame (decoder, frame);
 					if (ret<0) break;
-					pthread_mutex_lock (&mmutex);
 					decode_my_frame (frame);
-					pthread_mutex_unlock (&mmutex);
 				}
 				av_frame_free (&frame);
 			} while (0);
@@ -295,14 +228,15 @@ static int dj_cl_main (int argsc, char **args)
 	ar = rb_funcall (rb_cDir, rb_intern ("[]"), 1, ar);
 
 	while (1)
+	{
+		ar = rb_funcall (ar, rb_intern ("shuffle"), 0);
 		rb_block_call (ar, rb_intern ("each"), 0, 0, dj_each, Qnil);
+	}
 	return (0);
 }
 
 void dj_finalize ()
 {
-	pthread_mutex_destroy (&rbutex);
-	pthread_mutex_destroy (&mmutex);
 	ruby_finalize ();
 }
 
