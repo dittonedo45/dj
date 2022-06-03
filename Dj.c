@@ -102,7 +102,7 @@ void dj_finalize ();
 void dj_init ()
 {
 
-		assert (dj_init_output ("mp3"));
+		assert (dj_init_output ("sox"));
 		atexit (dj_finalize);
 		ruby_init ();
 		ruby_init_loadpath ();
