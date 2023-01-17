@@ -242,7 +242,9 @@ void dj_finalize ()
 
 int main (int argsc, char **args)
 {
+		
 		dj_init ();
 		dj_run_safe (dj_cl_main, argsc, args);
 		dj_finalize ();
+		return 0;
 }
